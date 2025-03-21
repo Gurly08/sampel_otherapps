@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../models/expanses_models.dart';
+import '../../models/expanses_models.dart';
 import 'input.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _DetailScreenState extends State<DetailScreen> {
         builder: (context) => InputScreen(expense: expense),
       ),
     );
-    if (updatedExpense != null) {
+    if (updatedExpense != null && updatedExpense is Expense) {
       setState(() {
         expense = updatedExpense;
       });
@@ -39,7 +39,20 @@ class _DetailScreenState extends State<DetailScreen> {
 
   void _deleteExpenseItem(int index) {
     setState(() {
-      expense.details.removeAt(index);
+      List<Map<String, dynamic>> updatedDetails = List.from(expense.details);
+      updatedDetails.removeAt(index);
+      expense = Expense(
+        id: expense.id,
+        title: expense.title,
+        date: expense.date,
+        color: expense.color,
+        weekCategory: expense.weekCategory,
+        monthYear: expense.monthYear,
+        isWeekly: expense.isWeekly,
+        weekId: expense.weekId,
+        linkedDailyExpenses: expense.linkedDailyExpenses,
+        details: updatedDetails,
+      );
     });
     widget.onUpdate(expense);
   }
@@ -49,6 +62,7 @@ class _DetailScreenState extends State<DetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(expense.title),
+        backgroundColor: expense.color,
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -90,10 +104,10 @@ class _DetailScreenState extends State<DetailScreen> {
                   double total = detail['quantity'] * detail['amount'];
                   return TableRow(
                     children: [
-                      Padding(padding: EdgeInsets.all(8.0), child: Text(detail['name'])),
-                      Padding(padding: EdgeInsets.all(8.0), child: Text(detail['quantity'].toString())),
-                      Padding(padding: EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(detail['amount'])}')),
-                      Padding(padding: EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(total)}')),
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['name'])),
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['quantity'].toString())),
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(detail['amount'])}')),
+                      Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(total)}')),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _deleteExpenseItem(index),
