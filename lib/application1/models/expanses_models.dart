@@ -46,6 +46,8 @@ class Expense {
       isWeekly: true,
       weekId: weekId,
       linkedDailyExpenses: dailyExpenses,
+      details: [],
     );
   }
+
 }

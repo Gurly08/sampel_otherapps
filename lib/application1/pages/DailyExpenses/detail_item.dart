@@ -70,62 +70,65 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Date: ${DateFormat('yyyy-MM-dd').format(expense.date)}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Table(
-              border: TableBorder.all(),
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1),
-                2: FlexColumnWidth(2),
-                3: FlexColumnWidth(2),
-                4: FlexColumnWidth(1),
-              },
-              children: [
-                TableRow(
-                  decoration: BoxDecoration(color: Colors.grey[300]),
-                  children: const [
-                    Padding(padding: EdgeInsets.all(8.0), child: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Padding(padding: EdgeInsets.all(8.0), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Padding(padding: EdgeInsets.all(8.0), child: Text('Unit Price', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Padding(padding: EdgeInsets.all(8.0), child: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
-                    Padding(padding: EdgeInsets.all(8.0), child: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                ),
-                ...expense.details.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  var detail = entry.value;
-                  double total = detail['quantity'] * detail['amount'];
-                  return TableRow(
-                    children: [
-                      Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['name'])),
-                      Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['quantity'].toString())),
-                      Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(detail['amount'])}')),
-                      Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(total)}')),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteExpenseItem(index),
-                      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Date: ${DateFormat('yyyy-MM-dd').format(expense.date)}',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(expense.weekCategory),
+              const SizedBox(height: 10),
+              Table(
+                border: TableBorder.all(),
+                columnWidths: const {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(1),
+                  2: FlexColumnWidth(2),
+                  3: FlexColumnWidth(2),
+                  4: FlexColumnWidth(1),
+                },
+                children: [
+                  TableRow(
+                    decoration: BoxDecoration(color: Colors.grey[300]),
+                    children: const [
+                      Padding(padding: EdgeInsets.all(8.0), child: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Padding(padding: EdgeInsets.all(8.0), child: Text('Qty', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Padding(padding: EdgeInsets.all(8.0), child: Text('Unit Price', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Padding(padding: EdgeInsets.all(8.0), child: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Padding(padding: EdgeInsets.all(8.0), child: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
                     ],
-                  );
-                }).toList(),
-              ],
-            ),
-            const Divider(),
-            ListTile(
-              title: const Text('Total'),
-              trailing: Text(
-                'Rp ${NumberFormat('#,###').format(expense.details.fold<double>(0, (sum, item) => sum + (item['quantity'] * item['amount'])))}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...expense.details.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    var detail = entry.value;
+                    double total = detail['quantity'] * detail['amount'];
+                    return TableRow(
+                      children: [
+                        Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['name'])),
+                        Padding(padding: const EdgeInsets.all(8.0), child: Text(detail['quantity'].toString())),
+                        Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(detail['amount'])}')),
+                        Padding(padding: const EdgeInsets.all(8.0), child: Text('Rp ${NumberFormat('#,###').format(total)}')),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _deleteExpenseItem(index),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                ],
               ),
-            ),
-          ],
+              const Divider(),
+              ListTile(
+                title: const Text('Total'),
+                trailing: Text(
+                  'Rp ${NumberFormat('#,###').format(expense.details.fold<double>(0, (sum, item) => sum + (item['quantity'] * item['amount'])))}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

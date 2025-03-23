@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sampel_otherapps/application1/pages/WeeklyTracker/weeklyscreen.dart';
 import '../../models/expanses_models.dart';
+import '../../provider/expense_provider.dart';
 import '../MonthlyTracker/monthscreen.dart';
 import 'detail_item.dart';
 import 'input.dart';
@@ -14,25 +15,13 @@ class ShoppingTracker extends StatefulWidget {
 }
 
 class _ShoppingTrackerState extends State<ShoppingTracker> {
-  List<Expense> expenses = [];
-
-  void _addExpense(Expense expense) {
-    setState(() {
-      expenses.add(expense);
-    });
-  }
-
-  void _updateExpense(int index, Expense updatedExpense) {
-    setState(() {
-      expenses[index] = updatedExpense;
-    });
-  }
-
   void _removeExpense(int index) {
-    final expense = expenses[index];
-    setState(() {
-      expenses.removeAt(index);
-    });
+    final provider = ExpenseProvider.of(context);
+    if (provider == null) return;
+
+    final expense = provider.expenses[index];
+    provider.removeExpense(expense);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 3),
@@ -41,13 +30,15 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
           label: 'Undo',
           onPressed: () {
             setState(() {
-              expenses.insert(index, expense);
+              provider.addExpense(expense);
             });
           },
         ),
       ),
     );
+    setState(() {});
   }
+
 
   double _calculateTotalExpense(Expense expense) {
     return expense.details.fold<double>(0, (sum, item) => sum + (item['quantity'] * item['amount']));
@@ -55,49 +46,58 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = ExpenseProvider.of(context);
+    if (provider == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final expenses = provider.expenses;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Expenses'), 
         backgroundColor: Colors.transparent,
+        automaticallyImplyLeading: false,
       ),
-      endDrawer: Drawer(
-        child: ListView(
-          children: [
-            const SizedBox(
-              height: 55,
-              child: DrawerHeader(
-                curve: Curves.linear,
-                child: Text('Shopping Tracker Indonesia'),
+      endDrawer: SizedBox(
+        width: 220,
+        child: Drawer(
+          child: ListView(
+            children: [
+              const SizedBox(
+                height: 55,
+                child: DrawerHeader(
+                  curve: Curves.linear,
+                  child: Text('Shopping Tracker Indonesia'),
+                ),
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: const Text('Daily Expenses'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.date_range),
-              title: const Text('Weekly Expenses'),
-              onTap: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => const Weeklyscreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: const Text('Monthly Expenses'),
-              onTap: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => const Monthscreen()),
-                );
-              },
-            ),
-          ],
+              ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: const Text('Daily Expenses'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.date_range),
+                title: const Text('Weekly Expenses'),
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const Weeklyscreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_month),
+                title: const Text('Monthly Expenses'),
+                onTap: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const Monthscreen()),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
       body: Padding(
@@ -146,7 +146,9 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
                           key: Key(expenses[index].id),
                           direction: DismissDirection.horizontal,
                           onDismissed: (direction) {
-                            _removeExpense(index);
+                            setState(() {
+                              _removeExpense(index);
+                            });
                           },
                           background: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
@@ -168,7 +170,7 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
                           ),
                           child: SizedBox(
                             width: 160,
-                            height: 170,
+                            height: 180,
                             child: Card(
                               elevation: 4,
                               shape: RoundedRectangleBorder(
@@ -183,13 +185,17 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
                                       builder: (context) => DetailScreen(
                                         expense: expenses[index],
                                         onUpdate: (updatedExpense) {
-                                          _updateExpense(index, updatedExpense);
+                                          setState(() {
+                                            provider.updateExpense(index, updatedExpense);
+                                          });
                                         },
                                       ),
                                     ),
                                   );
                                   if (updatedExpense != null) {
-                                    _updateExpense(index, updatedExpense);
+                                    setState(() {
+                                      provider.updateExpense(index, updatedExpense);
+                                    });
                                   }
                                 },
                                 child: Padding(
@@ -208,7 +214,8 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
                                       ),
                                       Text(
                                         'Rp ${NumberFormat('#,###').format(totalExpense)}'),
-                                      const SizedBox(height: 45),
+                                      const SizedBox(height: 20),
+                                      Text(expenses[index].weekCategory),
                                       Text(
                                         DateFormat('yyyy-MM-dd').format(expenses[index].date),
                                         style: const TextStyle(color: Colors.grey),
@@ -234,8 +241,11 @@ class _ShoppingTrackerState extends State<ShoppingTracker> {
             context,
             MaterialPageRoute(builder: (context) => const InputScreen()),
           );
+
           if (newExpense != null) {
-            _addExpense(newExpense);
+            setState(() {
+              provider.addExpense(newExpense);
+            });
           }
         },
         child: const Icon(Icons.add),

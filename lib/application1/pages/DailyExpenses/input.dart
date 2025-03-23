@@ -197,7 +197,7 @@ class _InputScreenState extends State<InputScreen> {
                       child: TextField(
                         controller: _amountControllers[index],
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Amount'),
+                        decoration: const InputDecoration(labelText: 'Price Unit'),
                       ),
                     ),
                     IconButton(
