@@ -1,19 +1,47 @@
 import 'package:flutter/material.dart';
+import '../../models/expanses_models.dart';
 import '../../provider/expense_provider.dart';
 import '../DailyExpenses/shopping_tracker.dart';
 import '../MonthlyTracker/monthscreen.dart';
+import 'inputweekly.dart';
 
-class Weeklyscreen extends StatelessWidget {
+class Weeklyscreen extends StatefulWidget {
   const Weeklyscreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<Weeklyscreen> createState() => _WeeklyscreenState();
+}
+
+class _WeeklyscreenState extends State<Weeklyscreen> {
+  List<Expense> weeklyExpenses = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadWeeklyExpenses();
+  }
+
+  void _loadWeeklyExpenses() {
     final expenseProvider = ExpenseProvider.of(context);
-    final allExpenses = expenseProvider?.expenses ?? [];
+    if (expenseProvider != null) {
+      setState(() {
+        weeklyExpenses = expenseProvider.expenses.where((e) => e.isWeekly).toList();
+      });
+    }
+  }
 
-    // 🔥 Mengambil hanya Weekly Expenses
-    final weeklyExpenses = allExpenses.where((expense) => expense.isWeekly).toList();
+  void _deleteExpense(Expense expense) {
+    final expenseProvider = ExpenseProvider.of(context);
+    if (expenseProvider != null) {
+      setState(() {
+        expenseProvider.removeExpense(expense);
+        _loadWeeklyExpenses();
+      });
+    }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       endDrawer: SizedBox(
         width: 220,
@@ -68,7 +96,6 @@ class Weeklyscreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Banner
             Container(
               width: 360,
               height: 260,
@@ -86,7 +113,6 @@ class Weeklyscreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            // List of Weekly Expenses
             Expanded(
               child: weeklyExpenses.isEmpty
                   ? const Center(child: Text('Tidak ada pengeluaran mingguan.'))
@@ -94,18 +120,30 @@ class Weeklyscreen extends StatelessWidget {
                       itemCount: weeklyExpenses.length,
                       itemBuilder: (context, index) {
                         final expense = weeklyExpenses[index];
+                        final totalAmount = expense.linkedDailyExpenses.fold(0, (sum, item) {
+                          return sum + (item.details.fold(0, (subSum, detail) {
+                            return subSum + (detail['amount'] is int ? detail['amount'] as int : 0);
+                          }));
+                        });
 
                         return Card(
                           color: expense.color,
                           child: ListTile(
                             title: Text(expense.title),
                             subtitle: Text('${expense.weekCategory} - ${expense.monthYear}'),
-                            trailing: Text(
-                              'Rp ${expense.linkedDailyExpenses.fold(0, (sum, item) => sum + item.details.fold(0, (subSum, detail) => subSum + (detail['amount'] as int)))}',
-                            ),
-                            onTap: () {
-                              // TODO: Navigasi ke detail weekly expense
+                            trailing: Text('Rp $totalAmount'),
+                            onTap: () async {
+                              final updatedExpense = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => InputWeekly(expense: expense),
+                                ),
+                              );
+                              if (updatedExpense != null) {
+                                _loadWeeklyExpenses();
+                              }
                             },
+                            onLongPress: () => _deleteExpense(expense),
                           ),
                         );
                       },
@@ -115,8 +153,21 @@ class Weeklyscreen extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigasi ke form input weekly expense
+        onPressed: () async {
+          final newWeeklyExpense = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const InputWeekly()),
+          );
+
+          if (newWeeklyExpense != null) {
+            final expenseProvider = ExpenseProvider.of(context);
+            if (expenseProvider != null) {
+              setState(() {
+                expenseProvider.addExpense(newWeeklyExpense);
+                _loadWeeklyExpenses();
+              });
+            }
+          }
         },
         backgroundColor: Colors.blueAccent,
         child: const Icon(Icons.add, color: Colors.white),
